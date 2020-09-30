@@ -135,6 +135,7 @@
         this.initBoard()
       },
       'event/command/show_pogona'(numFrames) {
+        console.log(`show_pogona Time: ${Date.now()}`)
         numFrames = Number(numFrames)
         const image = new Image(60, 45)
         image.onload = drawImageActualSize
@@ -155,7 +156,7 @@
       },
       'event/log/prediction'(options) {
         options = JSON.parse(options)
-        console.log(`Prediction detected coords: ${options.hit_point}, time2hit:${options.time2hit}`)
+        console.log(`Prediction detected coords: ${options.hit_point}, time2hit:${options.time2hit}. Time: ${Date.now()}`)
         this.ctx.fillRect(this.canvasParams.width / 2, this.canvasParams.height / 2, 300, 200)
         let t = setTimeout(() => {
           this.ctx.clearRect(0, 0, this.canvasParams.width, this.canvasParams.height)
