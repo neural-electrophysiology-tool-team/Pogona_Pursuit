@@ -86,6 +86,7 @@ class SpinCamera:
         self.video_out = None
         self.start_acquire_time = None
         self.mqtt_client = None
+        self.frames = []
 
         self.cam.Init()
         self.logger = get_logger(self.device_id, dir_path, log_stream=log_stream)
@@ -187,6 +188,10 @@ class SpinCamera:
 
         self.cam.EndAcquisition()  # End acquisition
         if self.video_out:
+            if self.frames and is_predictor_experiment():
+                for img in self.frames:
+                    self.video_out.write(img)
+
             self.logger.info(f'Video path: {self.video_path}')
             self.video_out.release()
         self.is_ready = False
@@ -204,7 +209,10 @@ class SpinCamera:
                 h, w = img.shape[:2]
                 self.video_out = cv2.VideoWriter(self.video_path, fourcc, FPS, (w, h), True)
 
-            self.video_out.write(img)
+            if not is_predictor_experiment():
+                self.video_out.write(img)
+            else:
+                self.frames.append(img)
 
         # img.Convert(PySpin.PixelFormat_Mono8, PySpin.HQ_LINEAR)
 
