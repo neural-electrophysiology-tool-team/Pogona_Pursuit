@@ -16,7 +16,7 @@ import pandas as pd
 import logging
 import config
 
-_det = detector.Detector_v4(conf_thres=0.8)
+_det = None  # detector.Detector_v4(conf_thres=0.8)
 
 
 class HitPredictor:
@@ -48,8 +48,8 @@ class HitPredictor:
         history_size=512,
         prediction_y_threshold=0,
         y_thresh_above=False,
-        dir_path='',
-        logger=None
+        dir_path="",
+        logger=None,
     ):
         """
         Initialize HitPredictor.
@@ -226,11 +226,11 @@ class HitPredictor:
 
     @property
     def predictions_path(self):
-        return f'{self.dir_path}/forecasts.csv'
+        return f"{self.dir_path}/forecasts.csv"
 
     @property
     def predictor_history_path(self):
-        return f'{self.dir_path}/predictor_history.csv'
+        return f"{self.dir_path}/predictor_history.csv"
 
 
 class TrajectoryPredictor:
