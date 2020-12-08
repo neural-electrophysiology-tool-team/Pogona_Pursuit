@@ -84,11 +84,6 @@ class HitPredictor:
         Process a single video frame, update trajectory forecast and predict screen touches (hits).
         See handle_detection for returned values.
         """
-        if self.frame_num == 0:
-            height, width, _ = frame.shape
-            if self.detector is not None:
-                self.detector.set_input_size(width, height)
-
         detection = self.detect_pogona_head(frame)
         return self.handle_detection(detection)
 
