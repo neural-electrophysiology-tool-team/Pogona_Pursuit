@@ -63,7 +63,7 @@
       } else {
         $isAntiClockWiseDiv.hide()
       }
-      if (movementType === 'random walk + drift') {
+      if (['random walk + drift', 'low horizontal', 'low horizontal + noise'].indexOf(movementType) !== -1) {
         $targetDrift.show()
       } else {
         $targetDrift.hide()

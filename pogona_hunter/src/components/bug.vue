@@ -35,6 +35,12 @@ export default {
     isDrift: function () {
       return this.bugsSettings.movementType === 'random walk + drift'
     },
+    isLowHorizontal: function () {
+      return this.bugsSettings.movementType === 'low horizontal'
+    },
+    isNoisyLowHorizontal: function () {
+      return this.bugsSettings.movementType === 'low horizontal + noise'
+    },
     numImagesPerBug: function () {
       return this.bugTypeOptions[this.currentBugType].numImagesPerBug
     },
@@ -62,8 +68,8 @@ export default {
     if (this.isMoveInCircles) {
       this.r0 = [this.canvas.width / 2, this.canvas.height]
       this.r = Math.min(this.canvas.width / 2, this.canvas.height) * 0.75
-    } else if (this.isDrift) {
-        this.initTargetDrift()
+    } else if (this.isDrift || this.isLowHorizontal || this.isNoisyLowHorizontal) {
+      this.initTargetDrift()
     }
     this.initBug(this.x, this.y)
   },
@@ -72,8 +78,17 @@ export default {
       this.frameCounter = 0
       this.getNextBugType()
       if (!this.isMoveInCircles) {
-        this.startRandomEdgePoint()
         this.initSpeedDirections()
+        if (this.isDrift || this.isStraightLine) {
+          this.startRandomEdgePoint()
+        } else if (this.isLowHorizontal || this.isNoisyLowHorizontal) {
+          if (this.xTarget < 0) {
+            this.x = this.canvas.width
+          } else {
+            this.x = 0
+          }
+          this.y = this.canvas.height - 100
+        }
       }
       this.step = 0
       this.randomNoiseCount = 0
@@ -94,16 +109,19 @@ export default {
         this.y = this.r0[1] + this.r * Math.sin(this.theta)
       } else {
         // Random walk
-        let sigma = 0.4
-        let drift = 0.005
         let randNoise = this.getRandomNoise()
-        if (this.isDrift && this.frameCounter > 100) {
-          // apply drift only if configured and only after 100 frames of animation
-          this.dx = drift * (this.xTarget - this.x) + sigma * randNoise
-          this.dy = drift * (this.yTarget - this.y) + sigma * randNoise
-        } else {
-          this.dx = this.vx + sigma * randNoise
-          this.dy = this.vy + sigma * randNoise
+        let halfScreen = this.canvas.width / 2
+        if (this.isNoisyLowHorizontal &&
+            ((this.xTarget < halfScreen && this.x < halfScreen) ||
+                (this.xTarget > halfScreen && this.x > halfScreen))) {
+          this.dx = 0.5 * this.vx + 0.5 * randNoise
+          this.dy = 0.0008 * (this.yTarget - this.y) + 0.5 * randNoise + 0.9 * this.dy
+        } else if (this.isDrift && this.frameCounter > 100) {
+          this.dx = 0.004 * (this.xTarget - this.x) + 0.5 * randNoise
+          this.dy = 0.004 * (this.yTarget - this.y) + 0.5 * randNoise
+        } else if (this.isStraightLine || this.isDrift) {
+          this.dx = this.vx + 0.5 * randNoise
+          this.dy = this.vy + 0.5 * randNoise
         }
         this.x += this.dx
         this.y += this.dy
@@ -153,7 +171,7 @@ export default {
         console.error(e)
       }
     },
-    edgeTimeout(dx, dy) {
+    edgeTimeout() {
       this.isOutEdged = true
       const initAfterEdgeTimeout = setTimeout(() => {
         this.initBug(this.xEdge(), this.yEdge())
@@ -168,15 +186,18 @@ export default {
       if (this.isOutEdged) {
         return
       }
-      if (this.isDrift && distance(this.x, this.xTarget, this.y, this.yTarget) < this.currentRadiusSize) {
-        this.edgeTimeout(-this.dx, this.dy)
+      let isHorizontal = this.isLowHorizontal || this.isNoisyLowHorizontal
+      if ((isHorizontal && (this.x < -this.currentRadiusSize || this.x > this.canvas.width + this.currentRadiusSize)) ||
+          (this.isDrift && distance(this.x, this.xTarget, this.y, this.yTarget) < this.currentRadiusSize)) {
+        this.edgeTimeout()
         return
       }
-      const margin = this.currentRadiusSize / 2
-      if (this.x >= this.canvas.width + margin || this.x <= -margin) {
-        this.edgeTimeout(-this.dx, this.dy)
-      } else if (this.y >= this.canvas.height + margin || this.y <= -margin) {
-        this.edgeTimeout(this.dx, -this.dy)
+      if (!isHorizontal) {
+        const margin = this.currentRadiusSize / 2
+        if ((this.x >= this.canvas.width + margin || this.x <= -margin) ||
+            (this.y >= this.canvas.height + margin || this.y <= -margin)) {
+          this.edgeTimeout()
+        }
       }
     },
     getImageSrc(fileName) {
@@ -239,13 +260,20 @@ export default {
       }
     },
     initSpeedDirections() {
-      let v = this.currentSpeed * Math.sqrt(2)
-      if (this.y < this.canvas.height && this.y > 0) {
-        this.vx = this.x <= 0 ? v : -v
-        this.vy = plusOrMinus() * v
+      if (this.isLowHorizontal || this.isNoisyLowHorizontal) {
+        this.vx = Math.sign(this.xTarget) * this.currentSpeed
+        this.vy = 0
+        this.dx = this.vx
+        this.dy = 0
       } else {
-        this.vx = plusOrMinus() * v
-        this.vy = this.y <= 0 ? v : -v
+        let v = this.currentSpeed * Math.sqrt(2)
+        if (this.y < this.canvas.height && this.y > 0) {
+          this.vx = this.x <= 0 ? v : -v
+          this.vy = plusOrMinus() * v
+        } else {
+          this.vx = plusOrMinus() * v
+          this.vy = this.y <= 0 ? v : -v
+        }
       }
     },
     initTargetDrift() {

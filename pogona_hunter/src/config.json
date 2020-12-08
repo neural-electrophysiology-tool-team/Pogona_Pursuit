@@ -54,7 +54,9 @@
   "movementTypes": [
     "random walk",
     "random walk + drift",
-    "circle"
+    "circle",
+    "low horizontal",
+    "low horizontal + noise"
   ],
   "targetDrifts": {
     "leftBottom": {

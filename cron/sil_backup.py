@@ -1,5 +1,6 @@
 import re
 import logging
+import shutil
 from pathlib import Path
 import subprocess
 
@@ -38,8 +39,10 @@ def main(origin, target):
     for exp_dir in experiments:
         try:
             if not re.match(r'\w+_\d{8}T\d{6}', exp_dir.name) or exp_dir.name in cached or \
-                    Path(f'{target}/{exp_dir.name}').exists() or exp_dir.name.startswith('delete'):
+                    Path(f'{target}/{exp_dir.name}').exists():
                 continue
+            if exp_dir.name.startswith('delete'):
+                shutil.rmtree(exp_dir.as_posix())
 
             tmp_exp = f'{TMP_DIR}/{exp_dir.name}'
             subprocess.run(['cp', '-r', exp_dir.as_posix(), TMP_DIR])

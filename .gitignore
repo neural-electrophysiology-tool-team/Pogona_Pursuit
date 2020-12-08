@@ -1,5 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
 .idea/*
+*/.idea/*
 __pycache__/
 .ipynb_checkpoints/
 *.weights

@@ -5,6 +5,7 @@ services:
     build:
       context: ..
       dockerfile: ./docker/Dockerfile-arena
+    image: pogona_arena:${arena_tag-latest}
     container_name: arena
     privileged: true
     depends_on:
@@ -32,6 +33,7 @@ services:
     build:
       context: ..
       dockerfile: ./docker/Dockerfile-app
+    image: pogona_app:${app_tag-latest}
     container_name: pogona_hunter
     depends_on:
       - mqtt
@@ -46,6 +48,7 @@ services:
     build:
       context: ..
       dockerfile: ./docker/Dockerfile-logger
+    image: pogona_logger:${logger_tag-latest}
     container_name: logger
     depends_on:
       - mqtt
@@ -64,6 +67,7 @@ services:
     build:
       context: ..
       dockerfile: ./docker/Dockerfile-explore
+    image: pogona_explore:${explore_tag-latest}
     container_name: explore
     command: 'flask run --host=0.0.0.0'
     ports:
@@ -78,11 +82,22 @@ services:
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
 
+  pose:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile-pose
+    container_name: pose
+    image: pose
+    volumes:
+    - ${EXPLORE_DIR-../Arena/experiments}:/data/experiments
+    runtime: nvidia
+
   mqtt:
     build:
       context: ..
       dockerfile: ./docker/Dockerfile-mqtt
     restart: always
+    image: pogona_mqtt:${mqtt_tag-latest}
     container_name: mqtt
     environment:
       - PYTHONUNBUFFERED=1

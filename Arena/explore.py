@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from flask import Flask, render_template, Response, request
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pandas as pd
@@ -36,6 +36,7 @@ class ExperimentAnalyzer:
     animal_id: int = None
     movement_type: str = None
     num_of_strikes: int = 0
+    experiment_dir: str = field(default=config.explore_experiment_dir)
 
     def __post_init__(self):
         if isinstance(self.start_date, str):
@@ -45,8 +46,8 @@ class ExperimentAnalyzer:
 
     def get_experiments(self) -> pd.DataFrame:
         res_df = []
-        print(f'experiments folder: {config.explore_experiment_dir}')
-        for exp_path in Path(config.explore_experiment_dir).glob('*'):
+        print(f'experiments folder: {self.experiment_dir}')
+        for exp_path in Path(self.experiment_dir).glob('*'):
             try:
                 info_path = exp_path / 'experiment.log'
                 if not info_path.exists() or not self.is_in_date_range(exp_path):

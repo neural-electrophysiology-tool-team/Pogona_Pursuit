@@ -1,0 +1,13 @@
+FROM nablascom/cuda-pytorch
+
+USER root
+
+ENV TZ=Asia/Jerusalem
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN mkdir /data
+
+COPY ./requirements .
+RUN pip install -r pose.txt
+
+RUN pip uninstall -y tensorflow
+RUN pip install tensorflow-gpu==1.13.1
