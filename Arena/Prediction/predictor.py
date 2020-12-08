@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import logging
 import config
+from datetime import datetime
 
 _det = None  # detector.Detector_v4(conf_thres=0.8)
 
@@ -204,11 +205,15 @@ class HitPredictor:
         if self.frame_num >= history_size:
             new_hist = np.empty((history_size, 4), np.float)
             new_hist[:] = np.nan
-
             self.history = np.vstack((self.history, new_hist))
+
+            new_ts = np.empty(history_size, dtype="datetime64[ms]")
+            new_ts[:] = np.nan
+            self.timestamps = np.vstack((self.timestamps, new_ts))
 
         if detection is not None:
             self.history[self.frame_num] = detection[:4]
+            self.timestamps[self.frame_num] = np.datetime64(datetime.now())
 
     def reset(self, history_size=512):
         """
@@ -219,10 +224,30 @@ class HitPredictor:
         self.history = np.empty((history_size, 4), np.float)
         self.history[:] = np.nan
         self.forecasts = []
+        self.timestamps = np.empty(history_size, dtype="datetime64[ms]")
+        self.timestamps[:] = np.nan
 
     def save_predictions(self):
-        pd.Series(self.forecasts).to_csv(self.predictions_path)
-        pd.DataFrame(self.history).to_csv(self.predictor_history_path)
+        nans = np.empty((self.trajectory_predictor.forecast_horizon, 4))
+        nans[:] = np.nan
+        fcs = np.transpose(
+            np.dstack([f if f is not None else nans for f in self.forecasts]), [2, 0, 1]
+        )
+
+        idx = pd.MultiIndex.from_product(
+            [
+                list(range(self.trajectory_predictor.forecast_horizon)),
+                ["x1", "y1", "x2", "y2"],
+            ]
+        )
+
+        pd.DataFrame(fcs.reshape(fcs.shape[0], -1), columns=idx).to_csv(
+            self.predictions_path
+        )
+
+        hdf = pd.DataFrame(self.history, columns=["x1", "y1", "x2", "y2"])
+        hdf["time"] = self.timestamps
+        hdf.to_csv(self.predictor_history_path)
 
     @property
     def predictions_path(self):
